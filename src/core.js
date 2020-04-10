@@ -8,7 +8,6 @@
 
 import * as shims from './shims';
 import { atob, btoa } from 'abab'
-import MD5 from './md5';
 import SHA1 from './sha1';
 import utils from './utils';
 
@@ -1341,7 +1340,7 @@ Strophe.TimedHandler.prototype = {
  *
  *  This class is the main part of Strophe.  It manages a BOSH or websocket
  *  connection to an XMPP server and dispatches events to the user callbacks
- *  as data arrives. It supports SASL PLAIN, SASL DIGEST-MD5, SASL SCRAM-SHA1
+ *  as data arrives. It supports SASL PLAIN, SASL SCRAM-SHA1
  *  and legacy authentication.
  *
  *  After creating a Strophe.Connection object, the user will typically
@@ -1408,7 +1407,6 @@ Strophe.TimedHandler.prototype = {
  *  priorities) are registered:
  *
  *      SCRAM-SHA1 - 70
- *      DIGEST-MD5 - 60
  *      PLAIN - 50
  *      OAUTH-BEARER - 40
  *      OAUTH-2 - 30
@@ -1738,7 +1736,6 @@ Strophe.Connection.prototype = {
         this.pass = pass;
 
         /** Variable: servtype
-         *  Digest MD5 compatibility.
          */
         this.servtype = "xmpp";
 
@@ -2274,7 +2271,6 @@ Strophe.Connection.prototype = {
         mechanisms = mechanisms || [
             Strophe.SASLAnonymous,
             Strophe.SASLExternal,
-            Strophe.SASLMD5,
             Strophe.SASLOAuthBearer,
             Strophe.SASLXOAuth2,
             Strophe.SASLPlain,
@@ -3169,7 +3165,6 @@ Strophe.Connection.prototype = {
  *
  *      OAUTHBEARER - 60
  *      SCRAM-SHA1 - 50
- *      DIGEST-MD5 - 40
  *      PLAIN - 30
  *      ANONYMOUS - 20
  *      EXTERNAL - 10
@@ -3205,12 +3200,10 @@ Strophe.SASLMechanism = function(name, isClientFirst, priority) {
    *  In the default configuration the priorities are
    *
    *  SCRAM-SHA1 - 40
-   *  DIGEST-MD5 - 30
    *  Plain - 20
    *
    *  Example: (This will cause Strophe to choose the mechanism that the server sent first)
    *
-   *  > Strophe.SASLMD5.priority = Strophe.SASLSHA1.priority;
    *
    *  See <SASL mechanisms> for a list of available mechanisms.
    *
@@ -3286,7 +3279,6 @@ Strophe.SASLMechanism.prototype = {
  *
  *  Strophe.SASLAnonymous - SASL ANONYMOUS authentication.
  *  Strophe.SASLPlain - SASL PLAIN authentication.
- *  Strophe.SASLMD5 - SASL DIGEST-MD5 authentication
  *  Strophe.SASLSHA1 - SASL SCRAM-SHA1 authentication
  *  Strophe.SASLOAuthBearer - SASL OAuth Bearer authentication
  *  Strophe.SASLExternal - SASL EXTERNAL authentication
@@ -3337,7 +3329,7 @@ Strophe.SASLSHA1.prototype.test = function(connection) {
 };
 
 Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cnonce) {
-    const cnonce = test_cnonce || MD5.hexdigest("" + (Math.random() * 1234567890));
+    const cnonce = test_cnonce;
     let auth_str = "n=" + utils.utf16to8(connection.authcid);
     auth_str += ",r=";
     auth_str += cnonce;
@@ -3402,84 +3394,6 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         return responseText;
     }
     return auth_str;
-};
-
-
-/** PrivateConstructor: SASLMD5
- *  SASL DIGEST MD5 authentication.
- */
-Strophe.SASLMD5 = function() {};
-Strophe.SASLMD5.prototype = new Strophe.SASLMechanism("DIGEST-MD5", false, 60);
-
-Strophe.SASLMD5.prototype.test = function(connection) {
-    return connection.authcid !== null;
-};
-
-/** PrivateFunction: _quote
- *  _Private_ utility function to backslash escape and quote strings.
- *
- *  Parameters:
- *    (String) str - The string to be quoted.
- *
- *  Returns:
- *    quoted string
- */
-Strophe.SASLMD5.prototype._quote = function (str) {
-    return '"' + str.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
-    //" end string workaround for emacs
-};
-
-Strophe.SASLMD5.prototype.onChallenge = function(connection, challenge, test_cnonce) {
-    const attribMatch = /([a-z]+)=("[^"]+"|[^,"]+)(?:,|$)/;
-    const cnonce = test_cnonce || MD5.hexdigest("" + (Math.random() * 1234567890));
-    let realm = "";
-    let host = null;
-    let nonce = "";
-    let qop = "";
-
-    while (challenge.match(attribMatch)) {
-        const matches = challenge.match(attribMatch);
-        challenge = challenge.replace(matches[0], "");
-        matches[2] = matches[2].replace(/^"(.+)"$/, "$1");
-        switch (matches[1]) {
-        case "realm":
-           realm = matches[2];
-           break;
-        case "nonce":
-           nonce = matches[2];
-           break;
-        case "qop":
-           qop = matches[2];
-           break;
-        case "host":
-           host = matches[2];
-           break;
-        }
-    }
-    let digest_uri = connection.servtype + "/" + connection.domain;
-    if (host !== null) {
-        digest_uri = digest_uri + "/" + host;
-    }
-
-    const cred = utils.utf16to8(connection.authcid + ":" + realm + ":" + this._connection.pass);
-    const A1 = MD5.hash(cred) + ":" + nonce + ":" + cnonce;
-    const A2 = 'AUTHENTICATE:' + digest_uri;
-
-    let responseText = "";
-    responseText += 'charset=utf-8,';
-    responseText += 'username=' + this._quote(utils.utf16to8(connection.authcid)) + ',';
-    responseText += 'realm=' + this._quote(realm) + ',';
-    responseText += 'nonce=' + this._quote(nonce) + ',';
-    responseText += 'nc=00000001,';
-    responseText += 'cnonce=' + this._quote(cnonce) + ',';
-    responseText += 'digest-uri=' + this._quote(digest_uri) + ',';
-    responseText += 'response=' + MD5.hexdigest(MD5.hexdigest(A1) + ":" +
-                                                nonce + ":00000001:" +
-                                                cnonce + ":auth:" +
-                                                MD5.hexdigest(A2)) + ",";
-    responseText += 'qop=auth';
-    this.onChallenge = () => "";
-    return responseText;
 };
 
 
@@ -3550,7 +3464,7 @@ Strophe.SASLXOAuth2.prototype.onChallenge = function (connection) {
     return utils.utf16to8(auth_str);
 };
 
-export { Strophe, $build, $iq, $msg, $pres, SHA1, MD5 };
+export { Strophe, $build, $iq, $msg, $pres, SHA1};
 
 export default {
     'Strophe':         Strophe,
@@ -3559,7 +3473,6 @@ export default {
     '$msg':            $msg,
     '$pres':           $pres,
     'SHA1':            SHA1,
-    'MD5':             MD5,
     'b64_hmac_sha1':   SHA1.b64_hmac_sha1,
     'b64_sha1':        SHA1.b64_sha1,
     'str_hmac_sha1':   SHA1.str_hmac_sha1,

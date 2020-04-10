@@ -13,48 +13,15 @@
 /*
  * Calculate the SHA-1 of an array of big-endian words, and a bit length
  */
-function core_sha1(x, len) {
-    /* append padding */
-    x[len >> 5] |= 0x80 << (24 - len % 32);
-    x[((len + 64 >> 9) << 4) + 15] = len;
 
-    var w = new Array(80);
-    var a =  1732584193;
-    var b = -271733879;
-    var c = -1732584194;
-    var d =  271733878;
-    var e = -1009589776;
+/*
+ * Takes in 32 bit words in array(big endian), bit length?
+ */
 
-    var i, j, t, olda, oldb, oldc, oldd, olde;
-    for (i = 0; i < x.length; i += 16) {
-        olda = a;
-        oldb = b;
-        oldc = c;
-        oldd = d;
-        olde = e;
 
-        for (j = 0; j < 80; j++) {
-            if (j < 16) {
-                w[j] = x[i + j];
-            } else {
-                w[j] = rol(w[j-3] ^ w[j-8] ^ w[j-14] ^ w[j-16], 1);
-            }
+function core_sha1(binblob) {    
+    
 
-            t = safe_add(safe_add(rol(a, 5), sha1_ft(j, b, c, d)),
-                         safe_add(safe_add(e, w[j]), sha1_kt(j)));
-            e = d;
-            d = c;
-            c = rol(b, 30);
-            b = a;
-            a = t;
-        }
-
-        a = safe_add(a, olda);
-        b = safe_add(b, oldb);
-        c = safe_add(c, oldc);
-        d = safe_add(d, oldd);
-        e = safe_add(e, olde);
-    }
     return [a, b, c, d, e];
 }
 
@@ -117,12 +84,8 @@ function rol(num, cnt) {
  * In 8-bit function, characters >255 have their hi-byte silently ignored.
  */
 function str2binb(str) {
-    var bin = [];
-    var mask = 255;
-    for (var i = 0; i < str.length * 8; i += 8) {
-        bin[i>>5] |= (str.charCodeAt(i / 8) & mask) << (24 - i%32);
-    }
-    return bin;
+   var buffer = new TextEncoder("utf-8").encode(str);
+    return buffer;
 }
 
 /*
