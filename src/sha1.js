@@ -19,10 +19,15 @@
  */
 
 
-function core_sha1(binblob) {    
-    
+function sha160(binblob) {
+    return crypto.subtle.digest({
+        name: "SHA-1"
+    }, binblob);
+}
 
-    return [a, b, c, d, e];
+async function core_sha1(binblob) {
+    let digest = await sha160(binblob);
+    return digest;
 }
 
 /*
@@ -62,27 +67,6 @@ function core_hmac_sha1(key, data) {
     return core_sha1(opad.concat(hash), 512 + 160);
 }
 
-/*
- * Add integers, wrapping at 2^32. This uses 16-bit operations internally
- * to work around bugs in some JS interpreters.
- */
-function safe_add(x, y) {
-    var lsw = (x & 0xFFFF) + (y & 0xFFFF);
-    var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-    return (msw << 16) | (lsw & 0xFFFF);
-}
-
-/*
- * Bitwise rotate a 32-bit number to the left.
- */
-function rol(num, cnt) {
-    return (num << cnt) | (num >>> (32 - cnt));
-}
-
-/*
- * Convert an 8-bit or 16-bit string to an array of big-endian words
- * In 8-bit function, characters >255 have their hi-byte silently ignored.
- */
 function str2binb(str) {
    var buffer = new TextEncoder("utf-8").encode(str);
     return buffer;
@@ -112,13 +96,8 @@ function binb2b64 (binarray) {
  * Convert an array of big-endian words to a string
  */
 function binb2str(bin) {
-    var str = "";
-    var mask = 255;
-    for (var i = 0; i < bin.length * 32; i += 8) {
-        str += String.fromCharCode((bin[i>>5] >>> (24 - i%32)) & mask);
-    }
-    return str;
-}
+    return Array.from(new Uint16Array(bin)).map(b => b.toString(16).padStart(2, '0')).join('');
+   }
 
 /*
  * These are the functions you'll usually want to call
@@ -128,8 +107,10 @@ const SHA1 = {
     b64_hmac_sha1:  function (key, data){ return binb2b64(core_hmac_sha1(key, data)); },
     b64_sha1:       function (s) { return binb2b64(core_sha1(str2binb(s),s.length * 8)); },
     binb2str:       binb2str,
+    str2binb: str2binb,
     core_hmac_sha1: core_hmac_sha1,
     str_hmac_sha1:  function (key, data){ return binb2str(core_hmac_sha1(key, data)); },
     str_sha1:       function (s) { return binb2str(core_sha1(str2binb(s),s.length * 8)); },
-};
-export { SHA1 as default };
+}
+
+exports.S = SHA1;

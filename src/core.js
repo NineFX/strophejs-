@@ -3383,8 +3383,8 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         Hi = SHA1.binb2str(Hi);
 
         const clientKey = SHA1.core_hmac_sha1(Hi, "Client Key");
-        const serverKey = SHA1.str_hmac_sha1(Hi, "Server Key");
-        const clientSignature = SHA1.core_hmac_sha1(SHA1.str_sha1(SHA1.binb2str(clientKey)), authMessage);
+        const serverKey = SHA1.str_hex_hmac_sha1(Hi, "Server Key");
+        const clientSignature = SHA1.core_hmac_sha1(SHA1.str_hex_sha1(SHA1.binb2str(clientKey)), authMessage);
         connection._sasl_data["server-signature"] = SHA1.b64_hmac_sha1(serverKey, authMessage);
 
         for (k = 0; k < 5; k++) {
@@ -3475,6 +3475,6 @@ export default {
     'SHA1':            SHA1,
     'b64_hmac_sha1':   SHA1.b64_hmac_sha1,
     'b64_sha1':        SHA1.b64_sha1,
-    'str_hmac_sha1':   SHA1.str_hmac_sha1,
-    'str_sha1':        SHA1.str_sha1
+    'str_hex_hmac_sha1':   SHA1.str_hex_hmac_sha1,
+    'str_hex_sha1':        SHA1.str_hex_sha1
 };
