@@ -12,6 +12,7 @@
     "globals": {
         "Uint8Array": true,
         "Promise": true,
+        "Uint16Array": true,
         "converse": true,
         "define": true,
         "require": true,

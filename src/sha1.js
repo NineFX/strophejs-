@@ -25,9 +25,8 @@ function sha160(binblob) {
     }, binblob);
 }
 
-async function core_sha1(binblob) {
-    let digest = await sha160(binblob);
-    return digest;
+function core_sha1(binblob) {
+   return sha160(binblob);
 }
 
 /*
@@ -109,8 +108,8 @@ const SHA1 = {
     binb2str:       binb2str,
     str2binb: str2binb,
     core_hmac_sha1: core_hmac_sha1,
-    str_hmac_sha1:  function (key, data){ return binb2str(core_hmac_sha1(key, data)); },
-    str_sha1:       function (s) { return binb2str(core_sha1(str2binb(s),s.length * 8)); },
+    str_hex_hmac_sha1:  function (key, data){ return binb2str(core_hmac_sha1(key, data)); },
+    str_hex_sha1:       function (s) { return binb2str(core_sha1(str2binb(s),s.length * 8)); },
 }
 
-exports.S = SHA1;
+export { SHA1 as default };
