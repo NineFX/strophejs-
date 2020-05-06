@@ -10,11 +10,8 @@
 
 /* Some functions and variables have been stripped for use with Strophe */
 
-/*
- * Calculate the SHA-1 of an array of big-endian words, and a bit length
- */
 
-const kEncoding = "utf-8";
+const ENCODING = "utf-8";
 
 function sha160(binblob) {
     return crypto.subtle.digest({
@@ -38,7 +35,7 @@ function core_hmac_sha1(key, data) {
 }
 
 function str2binb(str) {
-    return new TextEncoder(kEncoding).encode(str);
+    return new TextEncoder(ENCODING).encode(str);
 }
 
 /*
