@@ -12,30 +12,79 @@
 
 
 const ENCODING = "utf-8";
+const HMACSHA1 = {name: "HMAC", "hash" : "SHA-1"};
 
-function sha160(binblob) {
+async function sha160(binblob) {
     return crypto.subtle.digest({
         name: "SHA-1"
     }, binblob);
 }
 
-function core_sha1(binblob) {
+async function core_sha1(binblob) {
    return sha160(binblob);
 }
+
+async function hmac_generate_key_from_string(string) {
+  return crypto.subtle.importKey(
+    "raw",
+    str2binb(string),
+    HMACSHA1,
+    false,
+    [
+      "sign",
+      "verify"
+    ]
+  );
+}
+
+async function pbkdf2_generate_key_from_string(string) { //  Working
+  return crypto.subtle.importKey(
+    "raw",
+    str2binb(string),
+    "PBKDF2",
+    false,
+    ["deriveBits", "deriveKey"],
+  );
+}
+
+async function pbkdf2_derive_salted_key(key, data, salt, iterations) {  // Not working
+  return crypto.subtle.deriveKey(
+    {
+      "name": "PBKDF2",
+      salt: salt,
+      "iterations": iterations,
+      "hash": "SHA-1"
+    },
+    key,
+    HMACSHA1,
+    true,
+    [ "encrypt", "decrypt"]
+  );
+}
+
+async function pbkdf2_encrypt(key, data) {  // Unknown
+  return crypto.subtle.encrypt(
+    HMACSHA1,
+    key,
+    data
+  );
+}
+
+
 
 /*
  * Calculate the HMAC-SHA1 of a key and some data
  */
-function core_hmac_sha1(key, data) {
+async function core_hmac_sha1(key, data) {
   return crypto.subtle.sign(
-    "HMAC",
+    HMACSHA1,
     key,
     data
   );
 }
 
 function str2binb(str) {
-    return new TextEncoder(ENCODING).encode(str);
+    return (new TextEncoder(ENCODING)).encode(str);
 }
 
 /*
@@ -64,6 +113,8 @@ const SHA1 = {
     core_hmac_sha1: core_hmac_sha1,
     str_hex_hmac_sha1:  function (key, data){ return core_hmac_sha1(key, data).then(bin2hexstr); },
     str_hex_sha1:       function (s) { return core_sha1(str2binb(s)).then(bin2hexstr); },
+    hmac_generate_key_from_string: hmac_generate_key_from_string,
+    pbkdf2_generate_key_from_string: pbkdf2_generate_key_from_string
 }
 
 export { SHA1 as default };
