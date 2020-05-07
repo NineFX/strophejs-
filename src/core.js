@@ -3370,11 +3370,11 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
 
         salt = atob(salt);
         salt += "\x00\x00\x00\x01";
-
+        // TODO FIX
         const pass = utils.utf16to8(connection.pass);
-        Hi = U_old = SHA1.core_hmac_sha1(pass, salt);
+        Hi = U_old = await SHA1.core_hmac_sha1(pass, salt);
         for (i=1; i<iter; i++) {
-            U = SHA1.core_hmac_sha1(pass, SHA1.binb2str(U_old));
+            U = await SHA1.core_hmac_sha1(pass, SHA1.binb2str(U_old));
             for (k = 0; k < 5; k++) {
                 Hi[k] ^= U[k];
             }
@@ -3382,9 +3382,9 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         }
         Hi = SHA1.binb2str(Hi);
 
-        const clientKey = SHA1.core_hmac_sha1(Hi, "Client Key");
+        const clientKey = await SHA1.core_hmac_sha1(Hi, "Client Key");
         const serverKey = SHA1.str_hex_hmac_sha1(Hi, "Server Key");
-        const clientSignature = SHA1.core_hmac_sha1(SHA1.str_hex_sha1(SHA1.binb2str(clientKey)), authMessage);
+        const clientSignature = await SHA1.core_hmac_sha1(await SHA1.str_hex_sha1(SHA1.binb2str(clientKey)), authMessage);
         connection._sasl_data["server-signature"] = SHA1.b64_hmac_sha1(serverKey, authMessage);
 
         for (k = 0; k < 5; k++) {

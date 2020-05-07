@@ -48,7 +48,7 @@ function binb2b64 (binarray) {
 /*
  * Convert an array of big-endian words to a string
  */
-function binb2str(bin) {
+function bin2hexstr(bin) {
     return Array.from(new Uint16Array(bin)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -59,11 +59,11 @@ function binb2str(bin) {
 const SHA1 = {
     b64_hmac_sha1:  function (key, data){ return binb2b64(core_hmac_sha1(key, data)); },
     b64_sha1:       function (s) { return binb2b64(core_sha1(str2binb(s),s.length * 8)); },
-    binb2str:       binb2str,
+    bin2hexstr:       bin2hexstr,
     str2binb: str2binb,
     core_hmac_sha1: core_hmac_sha1,
-    str_hex_hmac_sha1:  function (key, data){ return binb2str(core_hmac_sha1(key, data)); },
-    str_hex_sha1:       function (s) { return binb2str(core_sha1(str2binb(s),s.length * 8)); },
+    str_hex_hmac_sha1:  function (key, data){ return core_hmac_sha1(key, data).then(bin2hexstr); },
+    str_hex_sha1:       function (s) { return core_sha1(str2binb(s)).then(bin2hexstr); },
 }
 
 export { SHA1 as default };
