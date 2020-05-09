@@ -13,6 +13,7 @@
 
 const ENCODING = "utf-8";
 const HMACSHA1 = {name: "HMAC", "hash" : "SHA-1"};
+const PBKDF2SHA1 = {name: "PBKDF2", "hash": "SHA-1", "length": 160};
 
 async function sha160(binblob) {
     return crypto.subtle.digest({
@@ -41,9 +42,9 @@ async function pbkdf2_generate_key_from_string(string) { //  Working
   return crypto.subtle.importKey(
     "raw",
     str2binb(string),
-    "PBKDF2",
+    PBKDF2SHA1,
     false,
-    ["deriveBits", "deriveKey"],
+    ["deriveKey", "deriveBits"],
   );
 }
 
@@ -56,7 +57,10 @@ async function pbkdf2_derive_salted_key(key, data, salt, iterations) {  // Not w
       "hash": "SHA-1"
     },
     key,
-    HMACSHA1,
+    {
+      name: "AES-GCM",
+      length: 256
+    },
     true,
     [ "encrypt", "decrypt"]
   );
@@ -99,6 +103,10 @@ function binb2b64 (binarray) {
  */
 function bin2hexstr(bin) {
     return Array.from(new Uint16Array(bin)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function b64binb(b64) {
+    return (new TextEncoder(ENCODING)).encode(atob(b64));
 }
 
 /*
