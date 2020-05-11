@@ -144,6 +144,7 @@ const SHA1 = {
     str_hex_hmac_sha1:  function (key, data) { return core_hmac_sha1(key, data).then(bin2hexstr); },
     str_hex_sha1:       function (s) { return core_sha1(str2binb(s)).then(bin2hexstr); },
     hmac_generate_key_from_string: hmac_generate_key_from_string,
+    hmac_generate_key_from_raw,
     pbkdf2_generate_key_from_string: pbkdf2_generate_key_from_string,
     pbkdf2_full_sign_from_string: function (keyString, salt, iterations, data) {
       return pbkdf2_generate_key_from_string(keyString).then((key) => pbkdf2_derive_salted_key(key, salt, iterations).then((key) => pbkdf2_sign(key, data)));

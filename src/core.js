@@ -3375,9 +3375,17 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         // TODO FIX
         const pass = utils.utf16to8(connection.pass);
         const saltedKey = SHA1.pbkdf2_generate_salted_key(pass, SHA1.str2binb(salt), iter);
-        const clientKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Client Key"));
+        const clientKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Client Key")).then(SHA1.hmac_generate_key_from_raw);
+        const clientKeyRaw = await crypto.subtle.exportKey("raw", clientKey);
+        const clientSignature = await SHA1.core_hmac_sha1(clientKey, authMessage);
         const serverKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Server Key"));
         const storedKey = await SHA1.sha1(clientKey).then((raw) => SHA1.hmac_generate_key_from_raw(raw))
+        // Calculate the clientProof
+        let clientProof = new Uint8Array(32);
+        for (let j = 0; j < 32; j++) {
+          clientProof[i] = clientSignature[j] ^ clientKeyRaw[i];
+        }
+        responseText += ",p=" + btoa(SHA1.binb2str(clientProof));
         return responseText;
     }
     return auth_str;
