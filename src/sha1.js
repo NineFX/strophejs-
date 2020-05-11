@@ -13,7 +13,7 @@
 
 const ENCODING = "utf-8";
 const HMACSHA1 = {name: "HMAC", "hash" : "SHA-1"};
-const PBKDF2SHA1 = {name: "PBKDF2", "hash": "SHA-1", "length": 160};
+const PBKDF2SHA1 = {name: "PBKDF2", "hash": "SHA-1"};
 
 async function sha160(binblob) {
     return crypto.subtle.digest({
@@ -38,7 +38,7 @@ async function hmac_generate_key_from_string(string) {
   );
 }
 
-async function pbkdf2_generate_key_from_string(string) { //  Working
+async function pbkdf2_generate_key_from_string(string) {
   return crypto.subtle.importKey(
     "raw",
     str2binb(string),
@@ -48,27 +48,28 @@ async function pbkdf2_generate_key_from_string(string) { //  Working
   );
 }
 
-async function pbkdf2_derive_salted_key(key, data, salt, iterations) {  // Not working
+async function pbkdf2_derive_salted_key(key, salt, iterations) {
   return crypto.subtle.deriveKey(
     {
       "name": "PBKDF2",
       salt: salt,
       "iterations": iterations,
-      "hash": "SHA-1"
+      "hash": "SHA-1",
     },
     key,
     {
-      name: "AES-GCM",
-      length: 256
+      "name": "HMAC",
+      "hash": "SHA-1",
+      "length": 160
     },
     true,
-    [ "encrypt", "decrypt"]
+    [ "sign", "verify"]
   );
 }
 
-async function pbkdf2_encrypt(key, data) {  // Unknown
-  return crypto.subtle.encrypt(
-    HMACSHA1,
+async function pbkdf2_sign(key, data) {  // Unknown
+  return crypto.subtle.sign(
+    "HMAC",
     key,
     data
   );
@@ -122,7 +123,10 @@ const SHA1 = {
     str_hex_hmac_sha1:  function (key, data){ return core_hmac_sha1(key, data).then(bin2hexstr); },
     str_hex_sha1:       function (s) { return core_sha1(str2binb(s)).then(bin2hexstr); },
     hmac_generate_key_from_string: hmac_generate_key_from_string,
-    pbkdf2_generate_key_from_string: pbkdf2_generate_key_from_string
+    pbkdf2_generate_key_from_string: pbkdf2_generate_key_from_string,
+    pbkdf2_full_sign_from_string: function (keyString, salt, iterations, data) {
+      return pbkdf2_generate_key_from_string(keyString).then((key) => pbkdf2_derive_salted_key(key, salt, iterations).then((key) => pbkdf2_sign(key, data)));
+    }
 }
 
 export { SHA1 as default };
