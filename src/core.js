@@ -3385,6 +3385,7 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         for (let j = 0; j < 32; j++) {
           clientProof[i] = clientSignature[j] ^ clientKeyRaw[i];
         }
+        connection._sasl_data["server-signature"] = await b64_hmac_sha1(serverKey, SHA1.str2binb(authMessage));
         responseText += ",p=" + btoa(SHA1.binb2str(clientProof));
         return responseText;
     }
