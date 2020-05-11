@@ -3371,8 +3371,6 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         authMessage += responseText;
 
         salt = str2bin(atob(salt));
-        // Not sure what this padding does, not in spec?
-        // TODO FIX
         const pass = utils.utf16to8(connection.pass);
         const saltedKey = SHA1.pbkdf2_generate_salted_key(pass, SHA1.str2binb(salt), iter);
         const clientKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Client Key")).then(SHA1.hmac_generate_key_from_raw);
@@ -3381,8 +3379,8 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         const serverKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Server Key"));
         const storedKey = await SHA1.sha1(clientKey).then((raw) => SHA1.hmac_generate_key_from_raw(raw))
         // Calculate the clientProof
-        let clientProof = new Uint8Array(32);
-        for (let j = 0; j < 32; j++) {
+        let clientProof = new Uint8Array(20);
+        for (let j = 0; j < 20; j++) {
           clientProof[i] = clientSignature[j] ^ clientKeyRaw[i];
         }
         connection._sasl_data["server-signature"] = await b64_hmac_sha1(serverKey, SHA1.str2binb(authMessage));
