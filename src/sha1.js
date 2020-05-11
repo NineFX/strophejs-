@@ -115,17 +115,21 @@ function b64binb(b64) {
  * They take string arguments and return either hex or base-64 encoded strings
  */
 const SHA1 = {
-    b64_hmac_sha1:  function (key, data){ return binb2b64(core_hmac_sha1(key, data)); },
+    b64_hmac_sha1:  function (key, data) { return binb2b64(core_hmac_sha1(key, data)); },
     b64_sha1:       function (s) { return binb2b64(core_sha1(str2binb(s),s.length * 8)); },
     bin2hexstr:       bin2hexstr,
     str2binb: str2binb,
     core_hmac_sha1: core_hmac_sha1,
-    str_hex_hmac_sha1:  function (key, data){ return core_hmac_sha1(key, data).then(bin2hexstr); },
+    str_hex_hmac_sha1:  function (key, data) { return core_hmac_sha1(key, data).then(bin2hexstr); },
     str_hex_sha1:       function (s) { return core_sha1(str2binb(s)).then(bin2hexstr); },
     hmac_generate_key_from_string: hmac_generate_key_from_string,
     pbkdf2_generate_key_from_string: pbkdf2_generate_key_from_string,
     pbkdf2_full_sign_from_string: function (keyString, salt, iterations, data) {
       return pbkdf2_generate_key_from_string(keyString).then((key) => pbkdf2_derive_salted_key(key, salt, iterations).then((key) => pbkdf2_sign(key, data)));
+      },
+    pbkdf2_sign: pbkdf2_sign,
+    pbkdf2_generate_salted_key: function (password, salt, iterations) {
+      return pbkdf2_generate_key_from_string(password).then((key) => pbkdf2_derive_salted_key(key, salt, iterations));
     }
 }
 

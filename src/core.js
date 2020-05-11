@@ -3370,9 +3370,12 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
 
         salt = atob(salt);
         salt += "\x00\x00\x00\x01";
+        salt = str2binb(salt);
         // TODO FIX
         const pass = utils.utf16to8(connection.pass);
-        Hi = U_old = await SHA1.core_hmac_sha1(pass, salt);
+        const saltedKey = await SHA1.pbkdf2_generate_salted_key(pass, salt, iter);
+        // Assuming this is PBKDF2
+        /*Hi = U_old = await SHA1.core_hmac_sha1(pass, salt);
         for (i=1; i<iter; i++) {
             U = await SHA1.core_hmac_sha1(pass, SHA1.binb2str(U_old));
             for (k = 0; k < 5; k++) {
@@ -3380,12 +3383,13 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
             }
             U_old = U;
         }
-        Hi = SHA1.binb2str(Hi);
-
-        const clientKey = await SHA1.core_hmac_sha1(Hi, "Client Key");
-        const serverKey = SHA1.str_hex_hmac_sha1(Hi, "Server Key");
-        const clientSignature = await SHA1.core_hmac_sha1(await SHA1.str_hex_sha1(SHA1.binb2str(clientKey)), authMessage);
-        connection._sasl_data["server-signature"] = SHA1.b64_hmac_sha1(serverKey, authMessage);
+        Hi = SHA1.binb2str(Hi);*/
+        // Need to figure out this part, he uses these clientKey and
+        // serverKey 
+        const clientKey = await SHA1.pbkdf2_sign(saltedKey, "Client Key");
+        const serverKey = await SHA1.pbkdf2_sign(saltedKey, "Server Key");
+        const clientSignature = await SHA1.pbkdf2_sign(await SHA1.str_hex_sha1(clientKey), str2binb(authMessage));
+        connection._sasl_data["server-signature"] = SHA1.(serverKey, authMessage);
 
         for (k = 0; k < 5; k++) {
             clientKey[k] ^= clientSignature[k];
