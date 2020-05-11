@@ -38,6 +38,19 @@ async function hmac_generate_key_from_string(string) {
   );
 }
 
+async function hmac_generate_key_from_raw(blob) {
+  return crypto.subtle.importKey(
+    "raw",
+    blob,
+    HMACSHA1,
+    false,
+    [
+      "sign",
+      "verify"
+    ]
+  );
+}
+
 async function pbkdf2_generate_key_from_string(string) {
   return crypto.subtle.importKey(
     "raw",
@@ -122,6 +135,7 @@ function binb2arr5(binblob) {
  * They take string arguments and return either hex or base-64 encoded strings
  */
 const SHA1 = {
+    sha1: sha160,
     b64_hmac_sha1:  function (key, data) { return binb2b64(core_hmac_sha1(key, data)); },
     b64_sha1:       function (s) { return binb2b64(core_sha1(str2binb(s),s.length * 8)); },
     bin2hexstr:       bin2hexstr,

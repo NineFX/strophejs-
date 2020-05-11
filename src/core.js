@@ -3370,24 +3370,14 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         responseText += "r=" + nonce;
         authMessage += responseText;
 
-        salt = atob(salt);
-        salt += "\x00\x00\x00\x01";
+        salt = str2bin(atob(salt));
+        // Not sure what this padding does, not in spec?
         // TODO FIX
         const pass = utils.utf16to8(connection.pass);
         const saltedKey = SHA1.pbkdf2_generate_salted_key(pass, SHA1.str2binb(salt), iter);
-        Hi = U_old = await SHA1.core_hmac_sha1(pass, salt);
-        for (i=1; i<iter; i++) {
-            U = await SHA1.core_hmac_sha1(pass, SHA1.binb2str(U_old));
-            for (k = 0; k < 5; k++) {
-                Hi[k] ^= U[k];
-            }
-            U_old = U;
-        }
-        Hi = SHA1.binb2str(Hi);
-
-        // 
         const clientKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Client Key"));
         const serverKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Server Key"));
+        const storedKey = await SHA1.sha1(clientKey).then((raw) => SHA1.hmac_generate_key_from_raw(raw))
         return responseText;
     }
     return auth_str;
