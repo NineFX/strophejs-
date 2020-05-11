@@ -103,11 +103,18 @@ function binb2b64 (binarray) {
  * Convert an array of big-endian words to a string
  */
 function bin2hexstr(bin) {
-    return Array.from(new Uint16Array(bin)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return Array.prototype.map.call(new Uint8Array(bin), x => ('00' + x.toString(16)).slice(-2)).join('');
 }
 
-function b64binb(b64) {
-    return (new TextEncoder(ENCODING)).encode(atob(b64));
+function b64binb(base64String) {
+    return Uint8Array.from(atob(base64String), c => c.charCodeAt(0));
+}
+
+function binb2arr5(binblob) {
+  if (binblob.length != 5) {
+    return []
+  }
+  return [0,1,2,3,4].map((x) => binblob[x]);
 }
 
 /*

@@ -3342,6 +3342,8 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
         let responseText = "c=biws,";
         let authMessage = `${connection._sasl_data["client-first-message-bare"]},${challenge},`;
         const cnonce = connection._sasl_data.cnonce;
+
+        // A Hacky sasl-prep?
         const attribMatch = /([a-z]+)=([^,]+)(,|$)/;
 
         while (challenge.match(attribMatch)) {
@@ -3370,12 +3372,10 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
 
         salt = atob(salt);
         salt += "\x00\x00\x00\x01";
-        salt = str2binb(salt);
         // TODO FIX
         const pass = utils.utf16to8(connection.pass);
-        const saltedKey = await SHA1.pbkdf2_generate_salted_key(pass, salt, iter);
-        // Assuming this is PBKDF2
-        /*Hi = U_old = await SHA1.core_hmac_sha1(pass, salt);
+        const saltedKey = SHA1.pbkdf2_generate_salted_key(pass, SHA1.str2binb(salt), iter);
+        Hi = U_old = await SHA1.core_hmac_sha1(pass, salt);
         for (i=1; i<iter; i++) {
             U = await SHA1.core_hmac_sha1(pass, SHA1.binb2str(U_old));
             for (k = 0; k < 5; k++) {
@@ -3383,18 +3383,11 @@ Strophe.SASLSHA1.prototype.onChallenge = function(connection, challenge, test_cn
             }
             U_old = U;
         }
-        Hi = SHA1.binb2str(Hi);*/
-        // Need to figure out this part, he uses these clientKey and
-        // serverKey 
-        const clientKey = await SHA1.pbkdf2_sign(saltedKey, "Client Key");
-        const serverKey = await SHA1.pbkdf2_sign(saltedKey, "Server Key");
-        const clientSignature = await SHA1.pbkdf2_sign(await SHA1.str_hex_sha1(clientKey), str2binb(authMessage));
-        connection._sasl_data["server-signature"] = SHA1.(serverKey, authMessage);
+        Hi = SHA1.binb2str(Hi);
 
-        for (k = 0; k < 5; k++) {
-            clientKey[k] ^= clientSignature[k];
-        }
-        responseText += ",p=" + btoa(SHA1.binb2str(clientKey));
+        // 
+        const clientKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Client Key"));
+        const serverKey = await SHA1.pbkdf2_sign(saltedKey, str2binb("Server Key"));
         return responseText;
     }
     return auth_str;
